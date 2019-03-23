@@ -9,14 +9,15 @@ import sys
 import os
 import math
 import random
-import os
 from copy import copy, deepcopy
 
-HFO_PATH = '/Users/j.zhou/coursework_rl/HFO'
+HFO_PATH = os.environ['HFO_PATH']
+if HFO_PATH is None:
+    raise FileNotFoundError('please set environment variable HFO_PATH.')
 
 
 class HFOGoalkeepingPlayer(object):
-    def __init__(self, config_dir=HFO_PATH + '/bin/teams/base/config/formations-dt',
+    def __init__(self, config_dir=os.path.join(HFO_PATH, 'bin/teams/base/config/formations-dt'),
                  port=6000, server_addr='localhost', team_name='base_right',
                  play_goalie=True):
 

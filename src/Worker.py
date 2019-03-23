@@ -12,14 +12,8 @@ import numpy as np
 import os
 
 
-def log(msg, logfile):
-    with open(logfile, 'w') as f:
-        f.write(msg)
-
-
 def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
-    port = args.port
-    # port = 8000 + idx * 5
+    port = 6000 + idx * 9
     seed = 2019 + idx * 46
 
     discountFactor = args.discountFactor
@@ -29,70 +23,65 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     episodeNumber = 0
     numTakenActions = 0
     numTakenActionCKPT = 0
-    newEpisode = True
+
+    totalWorkLoad = args.t_max / args.n_jobs
 
     state = torch.tensor(hfoEnv.reset())  # get initial state
 
-    logs = {}
     steps_to_ball = []
     steps_in_episode = []
     status_lst = []
+
+    log = {'steps_to_ball': steps_to_ball, 'steps_in_episode': steps_to_ball, 'status_lst': status_lst}
     cnt = None
+    firstRecord = True
 
     while True:
         # take action based on eps-greedy policy
+        lock.acquire()
         action = select_action(state, valueNetwork, episodeNumber, numTakenActions, args)  # action -> int
+        lock.release()
+
         act = hfoEnv.possibleActions[action]
         newObservation, reward, done, status, info = hfoEnv.step(act)
 
-        if 'kickable' in info and newEpisode:
+        if 'kickable' in info and firstRecord:
             cnt = numTakenActions - numTakenActionCKPT
-            newEpisode = False
+            firstRecord = False
 
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
+
+        lock.acquire()  # whenever you access the shared network, acquire the lock
         target = computeTargets(reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork)  # pred -> tensor
 
         loss = F.mse_loss(pred, target)  # compute loss
         loss.backward()  # accumulate loss
+        lock.release()
 
         # all updates on the parameters shall acqure lock
-        lock.acquire()
 
         counter.value += 1
         numTakenActions += 1
 
         if done:
+            firstRecord = True
             status_lst.append(status)
             steps_in_episode.append(numTakenActions - numTakenActionCKPT)
 
-            newEpisode = True
             if cnt is None:
-                steps_to_ball.append(500)
+                steps_to_ball.append(numTakenActions - numTakenActionCKPT)
             else:
                 steps_to_ball.append(cnt)
                 cnt = None
 
-            if episodeNumber >= 500:
-                s1 = 'HOW MANY STEPS TO BALL: % s' % steps_to_ball
-                s2 = 'AVG STEPS TO BALL: % d' % (sum(steps_to_ball) / len(steps_to_ball))
-                s3 = 'HOW MANY STEPS TO GOAL: % s' % steps_in_episode
-                s4 = 'AVG STEPS TO GOAL: % d' % (sum(steps_in_episode) / len(steps_in_episode))
-                s5 = 'STATUS: %s' % status_lst
-
-                msg = '\n'.join([s1, s2, s3, s4, s5])
-                print('============' * 2)
-                print(msg)
-                print('============' * 2)
-
-                log(msg, args.logfile)
-                exit()
-
             episodeNumber += 1
             numTakenActionCKPT = numTakenActions
+
             # hfoEnv alreay call 'preprocessState' in 'reset'
             state = torch.tensor(hfoEnv.reset())
 
+        lock.acquire()
         if done or numTakenActions % args.i_async_update == 0:
             optimizer.step()  # apply grads
             optimizer.zero_grad()  # clear all cached grad
@@ -101,14 +90,14 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             targetNetwork.load_state_dict(valueNetwork.state_dict())  # update target network
 
         if counter.value % args.ckpt_interval == 0:
-            filename = os.path.join(args.model_param_path, 'params_%d' % (counter.value / args.ckpt_interval))
+            filename = os.path.join(args.log_dir, 'ckpt', 'params_%d' % (counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
-
-        # if numTakenActions > myWordLoad:
-        #     lock.release()
-        #     return
-
         lock.release()
+
+        if numTakenActions > totalWorkLoad:
+            filename = os.path.join(args.log_dir, 'log_worker_%d' % idx)
+            saveLog(log, filename)
+            return
 
 
 def select_action(state, valueNetwork, episodeNumber, numTakenActions, args):
@@ -159,3 +148,12 @@ def computePrediction(state, action, valueNetwork):
 
 def saveModelNetwork(model, strDirectory):
     torch.save(model.state_dict(), strDirectory)
+
+
+def saveLog(log_data, filename):
+    """ save the log Data to the given filename
+    """
+    with open(filename, 'w') as f:
+        for key in log_data:
+            line = '%s:%s\n' % (key, log_data[key])
+            f.write(line)

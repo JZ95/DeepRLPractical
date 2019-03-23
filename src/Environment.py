@@ -7,10 +7,14 @@ import math
 import random
 import os
 import time
-HFO_PATH = '/Users/j.zhou/coursework_rl/HFO'
+
+HFO_PATH = os.environ['HFO_PATH']
+if HFO_PATH is None:
+    raise FileNotFoundError('please set environment variable HFO_PATH.')
+
 
 class HFOEnv(object):
-    def __init__(self, config_dir=HFO_PATH + '/bin/teams/base/config/formations-dt',
+    def __init__(self, config_dir=os.path.join(HFO_PATH, 'bin/teams/base/config/formations-dt'),
                  port=6000, server_addr='localhost', team_name='base_left', play_goalie=False,
                  numOpponents=0, numTeammates=0, seed=123):
 
@@ -30,12 +34,13 @@ class HFOEnv(object):
 
     # Method to initialize the server for HFO environment
     def startEnv(self):
+        hfo_cmd = os.path.join(HFO_PATH, 'bin/HFO')
         if self.numTeammates == 0:
-            os.system(HFO_PATH + "/bin/HFO --headless --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --port {} --fullstate &".format(str(self.seed),
-                                                                                                                                                                                                      str(self.numOpponents), str(self.port)))
+            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(str(self.port), str(self.seed),
+                                                                                                                                                                  str(self.numOpponents)))
         else:
-            os.system(HFO_PATH + "/bin/HFO --headless --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --port {} --fullstate &".format(
-                str(self.seed), str(self.numOpponents), str(self.numTeammates), str(self.port)))
+            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(
+                str(self.port), str(self.seed), str(self.numOpponents), str(self.numTeammates)))
         time.sleep(5)
 
     # Reset the episode and returns a new initial state for the next episode
@@ -50,13 +55,13 @@ class HFOEnv(object):
     # Connect the custom weaker goalkeeper to the server and
     # establish agent's connection with HFO server
     def connectToServer(self):
-        os.system(
-            "./Goalkeeper.py --numEpisodes=8000 --port={} &".format(str(self.port)))
+        os.system("/Users/j.zhou/DeepRLPractical/src/Goalkeeper.py --numEpisodes=8000 --port={} &".format(str(self.port)))
         time.sleep(2)
         self.hfo.connectToServer(LOW_LEVEL_FEATURE_SET, self.config_dir,
                                  self.port, self.server_addr, self.team_name, self.play_goalie)
 
-    # This method computes the resulting status and states after an agent decides to take an action
+    # This method computes the resulting status and states
+    # after an agent decides to take an action
     def act(self, actionString):
 
         if actionString == 'MOVE':
@@ -83,9 +88,6 @@ class HFOEnv(object):
     # for monitoring purposes.
 
     def get_reward(self, status, nextState):
-        ########################
-        ### define your reward #
-        ########################
         info = {}
 
         ball_dist_old = self.lastState[0][53]
@@ -96,19 +98,19 @@ class HFOEnv(object):
 
         reward = 0
 
-        # if status == GOAL:
-        #     reward += 1
-        # else:
-        if closer_to_ball:
+        if status == GOAL:
             reward += 1
-            pass
 
-        elif kickable == 1.0:
-            if 'kickable' not in info:
-                info['kickable'] = True
+        elif status == IN_GAME:
+            if closer_to_ball:
+                reward += 0.5
 
-        elif kickable == -1.0:
-            pass
+            if kickable == 1.0:
+                if 'kickable' not in info:
+                    info['kickable'] = True
+
+            # elif kickable == -1.0:
+            #     pass
 
         return reward, info
 
@@ -129,9 +131,6 @@ class HFOEnv(object):
 
     # Preprocess the state representation in this function
     def preprocessState(self, state):
-        ###############
-        ### insert your code
-        ###############
         """as a baseline , we dont do any preprocess
         just return a 68-d vector when using low-level features
         """
