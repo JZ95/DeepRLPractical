@@ -90,8 +90,22 @@ class HFOEnv(object):
     def get_reward(self, status, nextState):
         info = {}
 
+        goal_dist_old = self.lastState[0][15]
         ball_dist_old = self.lastState[0][53]
+
+        goal_dist = nextState[0][15]
         ball_dist = nextState[0][53]  # higher the value is, closer to the ball
+
+        a, b = nextState[0][5: 7]
+        a_top, b_top = nextState[0][16:18]
+        a_bot, b_bot = nextState[0][19:21]
+
+        theta = math.atan2(*nextState[0][5: 7])
+        ball_vel_angle = math.atan2(*nextState[0][56: 58])
+        theta_top = math.atan2(*nextState[0][16:18])
+        theta_bot = math.atan2(*nextState[0][19:21])
+
+        closer_to_goal = (goal_dist_old - goal_dist) < 0
         closer_to_ball = (ball_dist_old - ball_dist) < 0
 
         kickable = nextState[0][12]
@@ -109,8 +123,14 @@ class HFOEnv(object):
                 if 'kickable' not in info:
                     info['kickable'] = True
 
-            # elif kickable == -1.0:
-            #     pass
+                if closer_to_goal and goal_dist < 0.75:
+                    reward += 0.25
+
+                if ball_vel_angle > theta_top * 0.95 and ball_vel_angle < theta_bot * 0.95:
+                    reward += 0.25
+
+            elif kickable == -1.0:
+                pass
 
         return reward, info
 

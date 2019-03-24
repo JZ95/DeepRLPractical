@@ -8,8 +8,8 @@ from torch.autograd import Variable
 from Environment import HFOEnv
 import random
 import math
-import numpy as np
 import os
+import pickle
 
 
 def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
@@ -95,7 +95,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
         lock.release()
 
         if numTakenActions > totalWorkLoad:
-            filename = os.path.join(args.log_dir, 'log_worker_%d' % idx)
+            filename = os.path.join(args.log_dir, 'log_worker_%d.pkl' % idx)
             saveLog(log, filename)
             return
 
@@ -153,7 +153,5 @@ def saveModelNetwork(model, strDirectory):
 def saveLog(log_data, filename):
     """ save the log Data to the given filename
     """
-    with open(filename, 'w') as f:
-        for key in log_data:
-            line = '%s:%s\n' % (key, log_data[key])
-            f.write(line)
+    with open(filename, 'wb') as f:
+        pickle.dump(log_data, f)

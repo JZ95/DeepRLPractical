@@ -1,4 +1,7 @@
 import torch
+import sys
+sys.path.append('../')
+
 from SampleNetworks import ValueNetwork
 from Worker import computeTargets, computePrediction
 import csv

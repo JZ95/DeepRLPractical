@@ -3,3 +3,5 @@
 ./logs/*
 *.rcg
 *.rcl
+*.hfo
+notebooks/*
