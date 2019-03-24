@@ -2,11 +2,6 @@ import math
 from hfo import *
 from functools import partial
 
-REWARD_OPTS = {'baseline': baseline,
-               'baseline-closer2ball-0.5': partial(closer2ball_template, r=0.5),
-               'baseline-closer2ball-0.25': partial(closer2ball_template, r=0.25),
-               'baseline-closer2ball-0.1': partial(closer2ball_template, r=0.1)}
-
 
 def baseline(status, oldState, newState):
     """ Baseline reward function, only assign 1 on GOAL
@@ -143,3 +138,8 @@ def get_reward(status, oldState, newState):
             pass
 
     return reward, info
+
+REWARD_OPTS = {'baseline': baseline,
+               'baseline-closer2ball-0.5': partial(closer2ball_template, r=0.5),
+               'baseline-closer2ball-0.25': partial(closer2ball_template, r=0.25),
+               'baseline-closer2ball-0.1': partial(closer2ball_template, r=0.1)}
