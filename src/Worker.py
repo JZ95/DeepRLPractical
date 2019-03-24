@@ -33,7 +33,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     status_lst = []
 
     log = {'steps_to_ball': steps_to_ball,
-           'steps_in_episode': steps_to_ball, 
+           'steps_in_episode': steps_to_ball,
            'status_lst': status_lst}
     cnt = None
     firstRecord = True
@@ -85,20 +85,24 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             # hfoEnv alreay call 'preprocessState' in 'reset'
             state = torch.tensor(hfoEnv.reset())
 
-        lock.acquire()
         if done or numTakenActions % args.i_async_update == 0:
+            lock.acquire()
             optimizer.step()  # apply grads
             optimizer.zero_grad()  # clear all cached grad
+            lock.release()
 
         if counter.value % args.i_target == 0:
+            lock.acquire()
             targetNetwork.load_state_dict(
                 valueNetwork.state_dict())  # update target network
+            lock.release()
 
         if counter.value % args.ckpt_interval == 0:
+            lock.acquire()
             filename = os.path.join(args.log_dir, 'ckpt', 'params_%d' % (
                 counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
-        lock.release()
+            lock.release()
 
         if numTakenActions > totalWorkLoad:
             filename = os.path.join(args.log_dir, 'log_worker_%d.pkl' % idx)

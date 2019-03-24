@@ -13,7 +13,7 @@ ENV HFO_PATH=/opt/HFO
 RUN conda install pytorch-cpu torchvision-cpu -c pytorch
 WORKDIR /opt/HFO
 RUN python setup.py install
-COPY . ~/workspace
-WORKDIR ~/workspace
+COPY . /workspace
+WORKDIR /workspace
 
 CMD ["/bin/bash"]
