@@ -17,7 +17,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     seed = 2019 + idx * 46
 
     discountFactor = args.discountFactor
-    hfoEnv = HFOEnv(numTeammates=0, numOpponents=1, port=port, seed=seed)
+    hfoEnv = HFOEnv(args.reward_opt, numTeammates=0, numOpponents=1, port=port, seed=seed)
     hfoEnv.connectToServer()
 
     episodeNumber = 0
@@ -32,14 +32,17 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     steps_in_episode = []
     status_lst = []
 
-    log = {'steps_to_ball': steps_to_ball, 'steps_in_episode': steps_to_ball, 'status_lst': status_lst}
+    log = {'steps_to_ball': steps_to_ball,
+           'steps_in_episode': steps_to_ball, 
+           'status_lst': status_lst}
     cnt = None
     firstRecord = True
 
     while True:
         # take action based on eps-greedy policy
         lock.acquire()
-        action = select_action(state, valueNetwork, episodeNumber, numTakenActions, args)  # action -> int
+        action = select_action(
+            state, valueNetwork, episodeNumber, numTakenActions, args)  # action -> int
         lock.release()
 
         act = hfoEnv.possibleActions[action]
@@ -52,7 +55,8 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
 
         lock.acquire()  # whenever you access the shared network, acquire the lock
-        target = computeTargets(reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
+        target = computeTargets(
+            reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork)  # pred -> tensor
 
         loss = F.mse_loss(pred, target)  # compute loss
@@ -87,10 +91,12 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             optimizer.zero_grad()  # clear all cached grad
 
         if counter.value % args.i_target == 0:
-            targetNetwork.load_state_dict(valueNetwork.state_dict())  # update target network
+            targetNetwork.load_state_dict(
+                valueNetwork.state_dict())  # update target network
 
         if counter.value % args.ckpt_interval == 0:
-            filename = os.path.join(args.log_dir, 'ckpt', 'params_%d' % (counter.value / args.ckpt_interval))
+            filename = os.path.join(args.log_dir, 'ckpt', 'params_%d' % (
+                counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
         lock.release()
 
@@ -131,7 +137,8 @@ def computeTargets(reward, nextObservation, discountFactor, done, targetNetwork)
         ret = torch.tensor(reward, dtype=torch.float32)
     else:
         action_values = targetNetwork(nextObservation)
-        ret = torch.tensor(reward, dtype=torch.float32) + discountFactor * torch.max(action_values, 1)[0]
+        ret = torch.tensor(reward, dtype=torch.float32) + \
+            discountFactor * torch.max(action_values, 1)[0]
     return ret
 
 

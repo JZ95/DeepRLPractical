@@ -19,6 +19,7 @@ def get_args():
     # parser.add_argument('--logfile', type=str, default='')
 
     parser.add_argument('--log-dir', type=str)
+    parser.add_argument('--reward-opt', type=str, default='baseline')
     parser.add_argument('--ckpt-interval', type=int, default=1000000)
 
     parser.add_argument('--t-max', type=int, default=200000000)

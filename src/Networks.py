@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 
 # Define your neural networks in this class.
 # Use the __init__ method to define the architecture of the network

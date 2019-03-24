@@ -1,6 +1,6 @@
 *.pyc
 
-./logs/*
+logs/*
 *.rcg
 *.rcl
 *.hfo

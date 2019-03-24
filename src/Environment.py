@@ -2,11 +2,9 @@
 # encoding utf-8
 
 from hfo import *
-from copy import copy, deepcopy
-import math
-import random
 import os
 import time
+from reward_fun import REWARD_OPTS
 
 HFO_PATH = os.environ['HFO_PATH']
 if HFO_PATH is None:
@@ -14,7 +12,8 @@ if HFO_PATH is None:
 
 
 class HFOEnv(object):
-    def __init__(self, config_dir=os.path.join(HFO_PATH, 'bin/teams/base/config/formations-dt'),
+    def __init__(self, reward_opt,
+                 config_dir=os.path.join(HFO_PATH, 'bin/teams/base/config/formations-dt'),
                  port=6000, server_addr='localhost', team_name='base_left', play_goalie=False,
                  numOpponents=0, numTeammates=0, seed=123):
 
@@ -31,6 +30,7 @@ class HFOEnv(object):
         self.seed = seed
         self.startEnv()
         self.hfo = HFOEnvironment()
+        self.reward_opt = reward_opt
 
     # Method to initialize the server for HFO environment
     def startEnv(self):
@@ -88,51 +88,7 @@ class HFOEnv(object):
     # for monitoring purposes.
 
     def get_reward(self, status, nextState):
-        info = {}
-
-        goal_dist_old = self.lastState[0][15]
-        ball_dist_old = self.lastState[0][53]
-
-        goal_dist = nextState[0][15]
-        ball_dist = nextState[0][53]  # higher the value is, closer to the ball
-
-        a, b = nextState[0][5: 7]
-        a_top, b_top = nextState[0][16:18]
-        a_bot, b_bot = nextState[0][19:21]
-
-        theta = math.atan2(*nextState[0][5: 7])
-        ball_vel_angle = math.atan2(*nextState[0][56: 58])
-        theta_top = math.atan2(*nextState[0][16:18])
-        theta_bot = math.atan2(*nextState[0][19:21])
-
-        closer_to_goal = (goal_dist_old - goal_dist) < 0
-        closer_to_ball = (ball_dist_old - ball_dist) < 0
-
-        kickable = nextState[0][12]
-
-        reward = 0
-
-        if status == GOAL:
-            reward += 1
-
-        elif status == IN_GAME:
-            if closer_to_ball:
-                reward += 0.5
-
-            if kickable == 1.0:
-                if 'kickable' not in info:
-                    info['kickable'] = True
-
-                if closer_to_goal and goal_dist < 0.75:
-                    reward += 0.25
-
-                if ball_vel_angle > theta_top * 0.95 and ball_vel_angle < theta_bot * 0.95:
-                    reward += 0.25
-
-            elif kickable == -1.0:
-                pass
-
-        return reward, info
+        return REWARD_OPTS[self.reward_opt](status, self.lastState, nextState)
 
     # Method that serves as an interface between a script controlling the agent
     # and the environment. Method returns the nextState, reward, flag indicating
