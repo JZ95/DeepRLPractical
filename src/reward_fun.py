@@ -54,7 +54,6 @@ def closer2ball_template(status, oldState, newState, r):
 
     return reward, info
 
-
 def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goal):
     """ baseline (1 for GOAL) + 0.5 for closer to ball +
     0.5 for closer to goal && dist_to_goal < 0.75
@@ -89,7 +88,6 @@ def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goa
                 reward += r_goal
 
     return reward, info
-
 
 
 def get_reward(status, oldState, newState):
