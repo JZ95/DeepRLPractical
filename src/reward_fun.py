@@ -55,8 +55,8 @@ def closer2ball_template(status, oldState, newState, r):
     return reward, info
 
 def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goal, goal_dist_lim):
-    """ baseline (1 for GOAL) 
-    + r_ball for closer to ball 
+    """ baseline (1 for GOAL)
+    + r_ball for closer to ball
     + r_goal for closer to goal && dist_to_goal < 0.75
     """
     info = {}
@@ -142,6 +142,6 @@ REWARD_OPTS = {'baseline': baseline,
                'baseline-closer2ball-0.5': partial(closer2ball_template, r=0.5),
                'baseline-closer2ball-0.25': partial(closer2ball_template, r=0.25),
 
-               'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.25, goal_dist_lim=0.75),
-               'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.5': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.25, goal_dist_lim=0.5),
+               'closer2ball-0.25-closer2-goal-0.5-goal-dist-lim-0.75': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.5, goal_dist_lim=0.75),
+               'closer2ball-0.25-closer2-goal-0.5-goal-dist-lim-0.5': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.5, goal_dist_lim=0.5),
                }

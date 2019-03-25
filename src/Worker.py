@@ -13,7 +13,7 @@ import pickle
 
 
 def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
-    port = 6000 + idx * 9
+    port = 6050 + idx * 9
     seed = 2019 + idx * 46
 
     discountFactor = args.discountFactor
@@ -33,7 +33,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     status_lst = []
 
     log = {'steps_to_ball': steps_to_ball,
-           'steps_in_episode': steps_to_ball,
+           'steps_in_episode': steps_in_episode,
            'status_lst': status_lst}
     cnt = None
     firstRecord = True
