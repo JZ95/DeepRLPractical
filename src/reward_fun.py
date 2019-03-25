@@ -54,9 +54,10 @@ def closer2ball_template(status, oldState, newState, r):
 
     return reward, info
 
-def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goal):
-    """ baseline (1 for GOAL) + 0.5 for closer to ball +
-    0.5 for closer to goal && dist_to_goal < 0.75
+def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goal, goal_dist_lim):
+    """ baseline (1 for GOAL) 
+    + r_ball for closer to ball 
+    + r_goal for closer to goal && dist_to_goal < 0.75
     """
     info = {}
 
@@ -84,7 +85,7 @@ def closer2ball_n_closer2goal_template(status, oldState, newState, r_ball, r_goa
             if 'kickable' not in info:
                 info['kickable'] = True
 
-            if closer_to_goal and goal_dist < 0.75:
+            if closer_to_goal and goal_dist < goal_dist_lim:
                 reward += r_goal
 
     return reward, info
@@ -140,4 +141,7 @@ def get_reward(status, oldState, newState):
 REWARD_OPTS = {'baseline': baseline,
                'baseline-closer2ball-0.5': partial(closer2ball_template, r=0.5),
                'baseline-closer2ball-0.25': partial(closer2ball_template, r=0.25),
-               'baseline-closer2ball-0.1': partial(closer2ball_template, r=0.1)}
+
+               'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.25, goal_dist_lim=0.75),
+               'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.5': partial(closer2ball_n_closer2goal_template, r_ball=0.25, r_goal=0.25, goal_dist_lim=0.5),
+               }
