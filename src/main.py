@@ -22,15 +22,15 @@ def get_args():
     parser.add_argument('--reward-opt', type=str, default='baseline')
     parser.add_argument('--ckpt-interval', type=int, default=1000000)
 
-    parser.add_argument('--t-max', type=int, default=200000000)
-    parser.add_argument('--n-jobs', type=int, default=4)
-    parser.add_argument('--i-async_update', type=int, default=150)
-    parser.add_argument('--i-target', type=int, default=3000)
+    parser.add_argument('--t-max', type=float, default=32e6)
+    parser.add_argument('--n-jobs', type=int, default=8)
+    parser.add_argument('--i-async_update', type=int, default=250)
+    parser.add_argument('--i-target', type=int, default=2000)
     parser.add_argument('--discountFactor', type=float, default=0.99)
 
     parser.add_argument('--eps-end', type=float, default=0.02)
-    parser.add_argument('--eps-start', type=float, default=0.95)
-    parser.add_argument('--eps-decay', type=float, default=50000.0)
+    parser.add_argument('--eps-start', type=float, default=0.99)
+    parser.add_argument('--eps-decay', type=float, default=1e6)
 
     args = parser.parse_args()
     return args
