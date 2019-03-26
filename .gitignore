@@ -5,3 +5,5 @@ logs/*
 *.rcl
 *.hfo
 notebooks/*
+
+*.json

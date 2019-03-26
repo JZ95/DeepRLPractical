@@ -4,6 +4,7 @@
 from hfo import *
 import os
 import time
+from collections import deque
 from reward_fun import REWARD_OPTS
 
 HFO_PATH = os.environ['HFO_PATH']
@@ -31,15 +32,17 @@ class HFOEnv(object):
         self.startEnv()
         self.hfo = HFOEnvironment()
         self.reward_opt = reward_opt
+        self.checkLst = deque([], 4)
+        self.lastState = None
 
     # Method to initialize the server for HFO environment
     def startEnv(self):
         hfo_cmd = os.path.join(HFO_PATH, 'bin/HFO')
         if self.numTeammates == 0:
-            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(str(self.port), str(self.seed),
+            os.system(hfo_cmd + " --port {} --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(str(self.port), str(self.seed),
                                                                                                                                                                   str(self.numOpponents)))
         else:
-            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(
+            os.system(hfo_cmd + " --port {} --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(
                 str(self.port), str(self.seed), str(self.numOpponents), str(self.numTeammates)))
         time.sleep(5)
 
@@ -90,7 +93,7 @@ class HFOEnv(object):
     # for monitoring purposes.
 
     def get_reward(self, status, nextState):
-        return REWARD_OPTS[self.reward_opt](status, self.lastState, nextState)
+        return REWARD_OPTS[self.reward_opt](status, self.checkLst, nextState)
 
     # Method that serves as an interface between a script controlling the agent
     # and the environment. Method returns the nextState, reward, flag indicating
@@ -112,4 +115,27 @@ class HFOEnv(object):
         """as a baseline , we dont do any preprocess
         just return a 68-d vector when using low-level features
         """
-        return np.reshape(state, (1, -1))
+        newState = np.reshape(state, (1, -1))
+        oldState = self.lastState
+
+        if oldState is not None:
+            goal_dist_old = oldState[0][15]
+            ball_dist_old = oldState[0][53]
+
+            goal_dist = newState[0][15]
+            ball_dist = newState[0][53]  # higher the value is, closer to the ball
+
+            closer_to_goal = (goal_dist_old - goal_dist) < 0
+            closer_to_ball = (ball_dist_old - ball_dist) < 0
+
+            kickable = newState[0][12]
+
+            item = {}
+            item['closer2ball'] = closer_to_ball
+            item['closer2goal'] = closer_to_goal
+            item['dist2goal'] = goal_dist
+            item['kickable'] = (kickable == 1)
+
+            self.checkLst.append(item)
+
+        return newState
