@@ -11,25 +11,25 @@ export LOG_DIR=/Users/j.zhou/DeepRLPractical/logs
 #     --eps-decay 30000 \
 #     --reward-opt 'closer2ball-0.25-closer2-goal-0.5-goal-dist-lim-0.75'
 
-python $CODE_PATH/main.py \
-    --log-dir $LOG_DIR/'baseline' \
-    --t-max 1000000 \
-    --n-jobs 8 \
-    --eps-decay 40000 \
+# python $CODE_PATH/main.py \
+#     --log-dir $LOG_DIR/'baseline' \
+#     --t-max 1000000 \
+#     --n-jobs 8 \
+#     --eps-decay 50000 \
 
 python $CODE_PATH/main.py \
-    --log-dir $LOG_DIR/'closer2ball-0.25-v2' \
+    --log-dir $LOG_DIR/'closer2ball-0.25-v1' \
     --t-max 1000000 \
-    --n-jobs 8 \
-    --eps-decay 40000 \
-    --reward-opt 'closer2ball-0.25'
+    --n-jobs 2 \
+    --eps-decay 50000 \
+    --reward-opt 'closer2ball-0.25-v1'
 
-python $CODE_PATH/main.py \
-    --log-dir $LOG_DIR/'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75-v2' \
-    --t-max 1000000 \
-    --n-jobs 8 \
-    --eps-decay 40000 \
-    --reward-opt 'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75'
+# python $CODE_PATH/main.py \
+#     --log-dir $LOG_DIR/'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75-v1' \
+#     --t-max 1000000 \
+#     --n-jobs 8 \
+#     --eps-decay 50000 \
+#     --reward-opt 'closer2ball-0.25-closer2-goal-0.25-goal-dist-lim-0.75-v1'
 
     #python $CODE_PATH/main.py \
 #    --log-dir $LOG_DIR/'closer2ball-0.25-closer2-goal-0.5-goal-dist-lim-0.5' \

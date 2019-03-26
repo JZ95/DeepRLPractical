@@ -16,5 +16,5 @@ class ValueNetwork(nn.Module):
 
     def forward(self, state):
         h1 = F.tanh(self.fc1(state))
-        h2 = F.sigmoid(self.fc2(h1))
+        h2 = F.relu(self.fc2(h1))
         return h2

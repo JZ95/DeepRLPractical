@@ -115,6 +115,7 @@ class HFOEnv(object):
         """as a baseline , we dont do any preprocess
         just return a 68-d vector when using low-level features
         """
+        # state at current timestep
         newState = np.reshape(state, (1, -1))
         oldState = self.lastState
 
