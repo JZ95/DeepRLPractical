@@ -1,6 +1,22 @@
-FROM continuumio/miniconda3
-RUN apt-get update
-RUN apt-get install -y vim g++ libboost-all-dev qt4-default git cmake zlib1g-dev flex
+FROM nvidia/cuda:10.0
+
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y wget bzip2 ca-certificates curl \
+    vim g++ libboost-all-dev qt4-default git cmake zlib1g-dev flex && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda clean -tipsy && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc
+
 WORKDIR /opt
 RUN git clone https://github.com/raharrasy/HFO.git
 WORKDIR HFO
@@ -10,9 +26,9 @@ RUN cmake -DCMAKE_BUILD_TYPE=RelwithDebInfo -DBUILD_SOCCERWINDOW=False ..
 RUN make -j4
 RUN make install
 ENV HFO_PATH=/opt/HFO
-RUN conda install numpy pytorch torchvision cuda10.0 -c pytorch
 WORKDIR /opt/HFO
 RUN python setup.py install
+RUN conda install pytorch torchvision cudatoolkit=10.0 -c pytorch
 COPY . /home/workspace
 WORKDIR /home
 

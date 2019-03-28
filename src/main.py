@@ -42,6 +42,7 @@ def get_args():
 if __name__ == "__main__":
     # Example on how to initialize global locks for processes
     # and counters.
+    mp.set_start_method('spawn')
     args = get_args()
     if not os.path.exists(args.log_dir):
         os.mkdir(args.log_dir)
@@ -55,8 +56,8 @@ if __name__ == "__main__":
         targetNetwork = ValueNetwork()
 
         if args.use_gpu:
-            targetNetwork.cuda()
-            valueNetwork.cuda()
+            targetNetwork = targetNetwork.cuda()
+            valueNetwork = valueNetwork.cuda()
 
         targetNetwork.load_state_dict(valueNetwork.state_dict())
         targetNetwork.eval()
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
         valueNetwork = ValueNetwork()
         if args.use_gpu:
-            valueNetwork.cuda()
+            valueNetwork = valueNetwork.cuda()
 
         valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt)))
         valueNetwork.eval()

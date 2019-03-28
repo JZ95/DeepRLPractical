@@ -13,6 +13,11 @@ import pickle
 
 
 def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
+    if args.use_gpu and torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
     port = 6006 + idx * 9
     seed = 2019 + idx * 46
 
@@ -25,8 +30,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     numTakenActionCKPT = 0
 
     totalWorkLoad = args.t_max / args.n_jobs
-
-    state = torch.tensor(hfoEnv.reset())  # get initial state
+    state = torch.tensor(hfoEnv.reset()).to(device)  # get initial state
 
     steps_to_ball = []
     steps_in_episode = []
@@ -56,8 +60,8 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
 
         lock.acquire()  # whenever you access the shared network, acquire the lock
         target = computeTargets(
-            reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
-        pred = computePrediction(state, action, valueNetwork)  # pred -> tensor
+            reward, next_state, discountFactor, done, targetNetwork, device)  # target -> tensor
+        pred = computePrediction(state, action, valueNetwork, device)  # pred -> tensor
 
         loss = F.mse_loss(pred, target)  # compute loss
         loss.backward()  # accumulate loss
@@ -82,7 +86,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             numTakenActionCKPT = numTakenActions
 
             # hfoEnv alreay call 'preprocessState' in 'reset'
-            state = torch.tensor(hfoEnv.reset())
+            state = torch.tensor(hfoEnv.reset()).to(device)
 
         if done or numTakenActions % args.i_async_update == 0:
             lock.acquire()
@@ -102,6 +106,9 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
                 os.mkdir(ckpt_path)
 
             lock.acquire()
+            print('=' * 10)
+            print('save CKPT')
+            print('=' * 10)
             filename = os.path.join(ckpt_path, 'params_%d' % (
                 counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
@@ -133,7 +140,7 @@ def select_action(state, valueNetwork, episodeNumber, numTakenActions, args):
         return torch.max(valueNetwork(state), 1)[-1].item()
 
 
-def computeTargets(reward, nextObservation, discountFactor, done, targetNetwork):
+def computeTargets(reward, nextObservation, discountFactor, done, targetNetwork, device):
     """
     return y = r + \\gamma max_{a'} Q(s', a'; θ-) for non-terminal s'
     else y = r for terminal s'
@@ -144,15 +151,15 @@ def computeTargets(reward, nextObservation, discountFactor, done, targetNetwork)
     assert len(nextObservation.shape) == 2
 
     if done:
-        ret = torch.tensor(reward, dtype=torch.float32)
+        ret = torch.tensor(reward, dtype=torch.float32).to(device)
     else:
         action_values = targetNetwork(nextObservation)
-        ret = torch.tensor(reward, dtype=torch.float32) + \
-            discountFactor * torch.max(action_values, 1)[0]
+        ret = torch.tensor(reward, dtype=torch.float32).to(device) + \
+            discountFactor * torch.max(action_values, 1)[0].to(device)
     return ret
 
 
-def computePrediction(state, action, valueNetwork):
+def computePrediction(state, action, valueNetwork, device):
     """ a wrapper for the forward method of ValueNetwork
     return: tensor
     """
@@ -185,7 +192,7 @@ def evaluation(args, valueNetwork):
     numTakenActions = 0
     numTakenActionCKPT = 0
 
-    state = torch.tensor(hfoEnv.reset())  # get initial state
+    state = torch.tensor(hfoEnv.reset()).to(device)  # get initial state
 
     steps_to_ball = []
     steps_in_episode = []
@@ -209,7 +216,7 @@ def evaluation(args, valueNetwork):
             cnt = numTakenActions - numTakenActionCKPT
             firstRecord = False
 
-        next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
+        next_state = torch.tensor(hfoEnv.preprocessState(newObservation)).to(device)
 
         # all updates on the parameters shall acqure lock
         numTakenActions += 1
@@ -229,7 +236,7 @@ def evaluation(args, valueNetwork):
             numTakenActionCKPT = numTakenActions
 
             # hfoEnv alreay call 'preprocessState' in 'reset'
-            state = torch.tensor(hfoEnv.reset())
+            state = torch.tensor(hfoEnv.reset()).to(device)
 
     filename = os.path.join(args.log_dir, 'log_eval.pkl')
     saveLog(log, filename)
