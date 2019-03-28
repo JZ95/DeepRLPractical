@@ -13,7 +13,7 @@ import pickle
 
 
 def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
-    port = 6050 + idx * 9
+    port = 6006 + idx * 9
     seed = 2019 + idx * 46
 
     discountFactor = args.discountFactor
@@ -55,17 +55,17 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
 
         lock.acquire()  # whenever you access the shared network, acquire the lock
+        
         target = computeTargets(
             reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork)  # pred -> tensor
 
         loss = F.mse_loss(pred, target)  # compute loss
         loss.backward()  # accumulate loss
+        counter.value += 1
+
         lock.release()
 
-        # all updates on the parameters shall acqure lock
-
-        counter.value += 1
         numTakenActions += 1
 
         if done:
@@ -98,9 +98,13 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             lock.release()
 
         if counter.value % args.ckpt_interval == 0:
-            lock.acquire()
-            filename = os.path.join(args.log_dir, 'ckpt', 'params_%d' % (
+            ckpt_path = os.path.join(args.log_dir, 'ckpt')
+            if not os.path.exists(ckpt_path):
+                os.mkdir(ckpt_path)
+            filename = os.path.join(ckpt_path, 'params_%d' % (
                 counter.value / args.ckpt_interval))
+
+            lock.acquire()
             saveModelNetwork(valueNetwork, filename)
             lock.release()
 
@@ -117,8 +121,11 @@ def select_action(state, valueNetwork, episodeNumber, numTakenActions, args):
     assert isinstance(state, torch.Tensor)
 
     sample = random.random()
-    eps_threshold = args.eps_end + (args.eps_start - args.eps_end) * \
-        math.exp(-1. * numTakenActions / args.eps_decay)
+    if args.mode == 'train':
+        eps_threshold = args.eps_end + (args.eps_start - args.eps_end) * \
+            math.exp(-1. * numTakenActions / args.eps_decay)
+    else:
+        eps_threshold = args.eps_end
 
     if sample < eps_threshold:
         return random.randrange(4)
@@ -166,3 +173,64 @@ def saveLog(log_data, filename):
     """
     with open(filename, 'wb') as f:
         pickle.dump(log_data, f)
+
+
+def evaluation(args, valueNetwork):
+    port = 6050
+    seed = 2019
+
+    hfoEnv = HFOEnv(args.reward_opt, numTeammates=0, numOpponents=1, port=port, seed=seed)
+    hfoEnv.connectToServer()
+
+    episodeNumber = 0
+    numTakenActions = 0
+    numTakenActionCKPT = 0
+
+    state = torch.tensor(hfoEnv.reset())  # get initial state
+
+    steps_to_ball = []
+    steps_in_episode = []
+    status_lst = []
+
+    log = {'steps_to_ball': steps_to_ball,
+           'steps_in_episode': steps_in_episode,
+           'status_lst': status_lst}
+    cnt = None
+    firstRecord = True
+
+    while numTakenActions < args.t_max:
+        # take action based on eps-greedy policy
+        action = select_action(
+            state, valueNetwork, episodeNumber, numTakenActions, args)  # action -> int
+
+        act = hfoEnv.possibleActions[action]
+        newObservation, reward, done, status, info = hfoEnv.step(act)
+
+        if 'kickable' in info and firstRecord:
+            cnt = numTakenActions - numTakenActionCKPT
+            firstRecord = False
+
+        next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
+
+        # all updates on the parameters shall acqure lock
+        numTakenActions += 1
+
+        if done:
+            firstRecord = True
+            status_lst.append(status)
+            steps_in_episode.append(numTakenActions - numTakenActionCKPT)
+
+            if cnt is None:
+                steps_to_ball.append(numTakenActions - numTakenActionCKPT)
+            else:
+                steps_to_ball.append(cnt)
+                cnt = None
+
+            episodeNumber += 1
+            numTakenActionCKPT = numTakenActions
+
+            # hfoEnv alreay call 'preprocessState' in 'reset'
+            state = torch.tensor(hfoEnv.reset())
+
+    filename = os.path.join(args.log_dir, 'log_eval.pkl')
+    saveLog(log, filename)

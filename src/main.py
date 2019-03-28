@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # encoding utf-8
 import torch.multiprocessing as mp
+import torch
 import argparse
 import os
 from Networks import ValueNetwork
-from Worker import train
+from Worker import train, evaluation
 from SharedAdam import SharedAdam
 # Use this script to handle arguments and
 # initialize important components of your experiment.
@@ -18,6 +19,7 @@ def get_args():
     # parser.add_argument('--port', type=int, default=6000)
     # parser.add_argument('--logfile', type=str, default='')
 
+    parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--log-dir', type=str)
     parser.add_argument('--reward-opt', type=str, default='baseline')
     parser.add_argument('--ckpt-interval', type=int, default=1000000)
@@ -43,27 +45,38 @@ if __name__ == "__main__":
     if not os.path.exists(args.log_dir):
         os.mkdir(args.log_dir)
 
-    num_processes = args.n_jobs
-    counter = mp.Value('i', 0)
-    lock = mp.Lock()
+    if args.mode == 'train':
+        num_processes = args.n_jobs
+        counter = mp.Value('i', 0)
+        lock = mp.Lock()
 
-    valueNetwork = ValueNetwork()
-    targetNetwork = ValueNetwork()
+        valueNetwork = ValueNetwork()
+        targetNetwork = ValueNetwork()
 
-    targetNetwork.load_state_dict(valueNetwork.state_dict())
-    targetNetwork.eval()
+        targetNetwork.load_state_dict(valueNetwork.state_dict())
+        targetNetwork.eval()
 
-    valueNetwork.share_memory()
-    targetNetwork.share_memory()
+        valueNetwork.share_memory()
+        targetNetwork.share_memory()
 
-    # create Shared Adam optimizer
-    optimizer = SharedAdam(valueNetwork.parameters())
+        # create Shared Adam optimizer
+        optimizer = SharedAdam(valueNetwork.parameters())
 
-    processes = []
-    for idx in range(0, num_processes):
-        trainingArgs = (idx, args, valueNetwork, targetNetwork, optimizer, lock, counter)
-        p = mp.Process(target=train, args=(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter))
-        p.start()
-        processes.append(p)
-    for p in processes:
-        p.join()
+        processes = []
+        for idx in range(0, num_processes):
+            trainingArgs = (idx, args, valueNetwork, targetNetwork, optimizer, lock, counter)
+            p = mp.Process(target=train, args=(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+
+    elif args.mode == 'eval':
+        ckpt_path = os.path.join(args.log_dir, 'ckpt')
+        lastest_ckpt = sorted(os.listdir(ckpt_path))[-1]
+        print('loading ckpt %s' % lastest_ckpt)
+
+        valueNetwork = ValueNetwork()
+        valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt)))
+        valueNetwork.eval()
+        evaluation(args, valueNetwork)
