@@ -1,15 +1,14 @@
-export HFO_PATH=/Users/j.zhou/coursework_rl/HFO
-export CODE_PATH=/Users/j.zhou/DeepRLPractical/src
-export LOG_DIR=/Users/j.zhou/DeepRLPractical/logs
+export CODE_PATH=/home/workspace/src
+export LOG_DIR=/home/workspace/logs
 
 python $CODE_PATH/main.py \
-   --log-dir $LOG_DIR/'test' \
-   --t-max 10000 \
-   --n-jobs 2 \
+   --log-dir $LOG_DIR/'baseline' \
+   --t-max 1000200 \
+   --n-jobs 8 \
    --eps-decay 1500000 \
-   --ckpt-interval 1000
+   --ckpt-interval 250000
 
-# python $CODE_PATH/main.py \
-#     --log-dir $LOG_DIR/cloud_data/closer2ball-0.1-final \
-#     --t-max 100012 \
-#     --mode eval
+python $CODE_PATH/main.py \
+    --log-dir $LOG_DIR/'baseline' \
+    --t-max 100012 \
+    --mode eval

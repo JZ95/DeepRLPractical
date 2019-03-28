@@ -56,7 +56,7 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             cnt = numTakenActions - numTakenActionCKPT
             firstRecord = False
 
-        next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
+        next_state = torch.tensor(hfoEnv.preprocessState(newObservation)).to(device)
 
         lock.acquire()  # whenever you access the shared network, acquire the lock
         target = computeTargets(
@@ -106,9 +106,6 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
                 os.mkdir(ckpt_path)
 
             lock.acquire()
-            print('=' * 10)
-            print('save CKPT')
-            print('=' * 10)
             filename = os.path.join(ckpt_path, 'params_%d' % (
                 counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
@@ -184,6 +181,11 @@ def saveLog(log_data, filename):
 def evaluation(args, valueNetwork):
     port = 6050
     seed = 2019
+
+    if args.use_gpu and torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
 
     hfoEnv = HFOEnv(args.reward_opt, numTeammates=0, numOpponents=1, port=port, seed=seed)
     hfoEnv.connectToServer()
