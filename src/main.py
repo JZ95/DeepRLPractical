@@ -16,9 +16,6 @@ from SharedAdam import SharedAdam
 def get_args():
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('--port', type=int, default=6000)
-    # parser.add_argument('--logfile', type=str, default='')
-
     parser.add_argument('--mode', type=str, default='train')
     parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--log-dir', type=str)
