@@ -44,10 +44,8 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
 
     while True:
         # take action based on eps-greedy policy
-        lock.acquire()
         action = select_action(
             state, valueNetwork, episodeNumber, numTakenActions, args)  # action -> int
-        lock.release()
 
         act = hfoEnv.possibleActions[action]
         newObservation, reward, done, status, info = hfoEnv.step(act)
@@ -58,15 +56,16 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
 
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation)).to(device)
 
-        lock.acquire()  # whenever you access the shared network, acquire the lock
         target = computeTargets(
             reward, next_state, discountFactor, done, targetNetwork, device)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork, device)  # pred -> tensor
 
         loss = F.mse_loss(pred, target)  # compute loss
         loss.backward()  # accumulate loss
-        counter.value += 1
 
+        lock.acquire()
+        counter.value += 1
+        counterValue = counter.value
         lock.release()
 
         numTakenActions += 1
@@ -89,25 +88,22 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             state = torch.tensor(hfoEnv.reset()).to(device)
 
         if done or numTakenActions % args.i_async_update == 0:
-            lock.acquire()
             optimizer.step()  # apply grads
             optimizer.zero_grad()  # clear all cached grad
-            lock.release()
 
-        if counter.value % args.i_target == 0:
-            lock.acquire()
+        if counterValue % args.i_target == 0:
             targetNetwork.load_state_dict(
                 valueNetwork.state_dict())  # update target network
-            lock.release()
 
-        if counter.value % args.ckpt_interval == 0:
+        if counterValue % args.ckpt_interval == 0:
             ckpt_path = os.path.join(args.log_dir, 'ckpt')
             if not os.path.exists(ckpt_path):
                 os.mkdir(ckpt_path)
 
-            lock.acquire()
             filename = os.path.join(ckpt_path, 'params_%d' % (
-                counter.value / args.ckpt_interval))
+                counterValue / args.ckpt_interval))
+
+            lock.acquire()
             saveModelNetwork(valueNetwork, filename)
             lock.release()
 

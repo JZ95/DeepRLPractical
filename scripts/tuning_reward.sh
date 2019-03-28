@@ -3,10 +3,10 @@ export LOG_DIR=/home/workspace/logs
 
 python $CODE_PATH/main.py \
    --log-dir $LOG_DIR/'baseline' \
-   --t-max 1000200 \
+   --t-max 32002200 \
    --n-jobs 8 \
-   --eps-decay 1500000 \
-   --ckpt-interval 250000
+   --eps-decay 4000000 \
+   --ckpt-interval 500000
 
 python $CODE_PATH/main.py \
     --log-dir $LOG_DIR/'baseline' \
