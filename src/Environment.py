@@ -36,10 +36,10 @@ class HFOEnv(object):
     def startEnv(self):
         hfo_cmd = os.path.join(HFO_PATH, 'bin/HFO')
         if self.numTeammates == 0:
-            os.system(hfo_cmd + " --port {} --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(str(self.port), str(self.seed),
+            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-npcs=0 --defense-agents={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(str(self.port), str(self.seed),
                                                                                                                                                                   str(self.numOpponents)))
         else:
-            os.system(hfo_cmd + " --port {} --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(
+            os.system(hfo_cmd + " --headless --port {} --seed {} --defense-agents={} --defense-npcs=0 --offense-npcs={} --offense-agents=1 --trials 8000 --untouched-time 500 --frames-per-trial 500 --fullstate &".format(
                 str(self.port), str(self.seed), str(self.numOpponents), str(self.numTeammates)))
         time.sleep(5)
 

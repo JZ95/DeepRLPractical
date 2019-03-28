@@ -20,6 +20,7 @@ def get_args():
     # parser.add_argument('--logfile', type=str, default='')
 
     parser.add_argument('--mode', type=str, default='train')
+    parser.add_argument('--use-gpu', action='store_true')
     parser.add_argument('--log-dir', type=str)
     parser.add_argument('--reward-opt', type=str, default='baseline')
     parser.add_argument('--ckpt-interval', type=int, default=1000000)
@@ -53,6 +54,10 @@ if __name__ == "__main__":
         valueNetwork = ValueNetwork()
         targetNetwork = ValueNetwork()
 
+        if args.use_gpu:
+            targetNetwork.cuda()
+            valueNetwork.cuda()
+
         targetNetwork.load_state_dict(valueNetwork.state_dict())
         targetNetwork.eval()
 
@@ -77,6 +82,9 @@ if __name__ == "__main__":
         print('loading ckpt %s' % lastest_ckpt)
 
         valueNetwork = ValueNetwork()
+        if args.use_gpu:
+            valueNetwork.cuda()
+
         valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt)))
         valueNetwork.eval()
         evaluation(args, valueNetwork)

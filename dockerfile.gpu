@@ -1,0 +1,19 @@
+FROM continuumio/miniconda3
+RUN apt-get update
+RUN apt-get install -y vim g++ libboost-all-dev qt4-default git cmake zlib1g-dev flex
+WORKDIR /opt
+RUN git clone https://github.com/raharrasy/HFO.git
+WORKDIR HFO
+RUN mkdir build
+WORKDIR build
+RUN cmake -DCMAKE_BUILD_TYPE=RelwithDebInfo -DBUILD_SOCCERWINDOW=False ..
+RUN make -j4
+RUN make install
+ENV HFO_PATH=/opt/HFO
+RUN conda install numpy pytorch torchvision cuda10.0 -c pytorch
+WORKDIR /opt/HFO
+RUN python setup.py install
+COPY . /home/workspace
+WORKDIR /home
+
+CMD ["/bin/bash"]

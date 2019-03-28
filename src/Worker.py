@@ -55,7 +55,6 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation))
 
         lock.acquire()  # whenever you access the shared network, acquire the lock
-        
         target = computeTargets(
             reward, next_state, discountFactor, done, targetNetwork)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork)  # pred -> tensor
@@ -101,10 +100,10 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             ckpt_path = os.path.join(args.log_dir, 'ckpt')
             if not os.path.exists(ckpt_path):
                 os.mkdir(ckpt_path)
-            filename = os.path.join(ckpt_path, 'params_%d' % (
-                counter.value / args.ckpt_interval))
 
             lock.acquire()
+            filename = os.path.join(ckpt_path, 'params_%d' % (
+                counter.value / args.ckpt_interval))
             saveModelNetwork(valueNetwork, filename)
             lock.release()
 
