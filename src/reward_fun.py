@@ -14,6 +14,7 @@ def baseline(status, oldState, newState):
         info['kickable'] = True
 
     if status == GOAL:
+        print('GOAL')
         reward = 1
 
     return reward, info

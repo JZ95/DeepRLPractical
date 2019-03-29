@@ -24,8 +24,8 @@ def get_args():
 
     parser.add_argument('--t-max', type=float, default=32e6)
     parser.add_argument('--n-jobs', type=int, default=8)
-    parser.add_argument('--i-async_update', type=int, default=250)
-    parser.add_argument('--i-target', type=int, default=2000)
+    parser.add_argument('--i-async_update', type=int, default=500)
+    parser.add_argument('--i-target', type=int, default=7500)
     parser.add_argument('--discountFactor', type=float, default=0.99)
 
     parser.add_argument('--eps-end', type=float, default=0.02)
@@ -64,6 +64,7 @@ if __name__ == "__main__":
 
         # create Shared Adam optimizer
         optimizer = SharedAdam(valueNetwork.parameters())
+        optimizer.share_memory()
 
         processes = []
         for idx in range(0, num_processes):
@@ -76,13 +77,16 @@ if __name__ == "__main__":
 
     elif args.mode == 'eval':
         ckpt_path = os.path.join(args.log_dir, 'ckpt')
-        lastest_ckpt = sorted(os.listdir(ckpt_path))[-1]
+        lastest_ckpt_id = sorted([int(file.split('_')[-1]) for file in os.listdir(ckpt_path)])[-1]
+        lastest_ckpt = os.path.join(ckpt_path, 'params_%d' % lastest_ckpt_id)
         print('loading ckpt %s' % lastest_ckpt)
 
+        map_loc = 'cpu'
         valueNetwork = ValueNetwork()
         if args.use_gpu:
             valueNetwork = valueNetwork.cuda()
+            map_loc = 'gpu'
 
-        valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt)))
+        valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt), map_location=map_loc))
         valueNetwork.eval()
         evaluation(args, valueNetwork)
