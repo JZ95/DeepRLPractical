@@ -1,9 +1,14 @@
 *.pyc
 
-logs/*
 *.rcg
 *.rcl
 *.hfo
 notebooks/*
 
+# keep the empty logs dir
+logs/*
+!logs/.gitkeep
+
+
 *.json
+scripts/setup_docker.sh
