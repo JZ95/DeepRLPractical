@@ -1,4 +1,8 @@
-<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+<head>
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async>
+</script>
+</head>
 
 # DeepRLPractical
 An Implementation for Asynchronous Q-Learning on HFO game. This is a coursework for [Reinforcement Learning](https://www.inf.ed.ac.uk/teaching/courses/rl/) in UoE.
@@ -43,10 +47,11 @@ docker run --runtime=nvidia --rm -it -v rl-vol:/home/workspace/logs deep_rl_env
 ```
 
 ## Eps-Greedy Policy
-We use $\beta$ -greedy for policy improvement, and the $\epsilon$ decreases exponentially w.r.t. the training steps as follows:
-$$\epsilon = \epsilon_{end} + (\epsilon_{start} - \epsilon_{end}) \times \frac{t}{d}$$
-where $t$ is the training step and $d$ is the decay rate.
 
+<p>
+    We use \(\epsilon \)-greedy for policy improvement, and the \(\epsilon \) decreases exponentially w.r.t. the training steps as follows: $$\epsilon = \epsilon_{end} + (\epsilon_{start} - \epsilon_{end})$$
+    where \(t \) is the training step and \(d \) is the decay rate.
+</p>
 
 ------------
 ## Reference:
