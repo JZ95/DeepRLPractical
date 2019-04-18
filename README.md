@@ -1,9 +1,3 @@
-<head>
-  <script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async>
-</script>
-</head>
-
 # DeepRLPractical
 An Implementation for Asynchronous Q-Learning on HFO game. This is a coursework for [Reinforcement Learning](https://www.inf.ed.ac.uk/teaching/courses/rl/) in UoE.
 
@@ -47,11 +41,11 @@ docker run --runtime=nvidia --rm -it -v rl-vol:/home/workspace/logs deep_rl_env
 ```
 
 ## Eps-Greedy Policy
+We use <img src="https://latex.codecogs.com/gif.latex?\inline&space;\large&space;\epsilon" title="\large \epsilon" />-greedy for policy improvement, and the <img src="https://latex.codecogs.com/gif.latex?\inline&space;\large&space;\epsilon" title="\large \epsilon" /> decreases exponentially w.r.t. the training steps as follows:
 
-<p>
-    We use \(\epsilon \)-greedy for policy improvement, and the \(\epsilon \) decreases exponentially w.r.t. the training steps as follows: $$\epsilon = \epsilon_{end} + (\epsilon_{start} - \epsilon_{end})$$
-    where \(t \) is the training step and \(d \) is the decay rate.
-</p>
+<img src="https://latex.codecogs.com/svg.latex?\Large&space;\epsilon = \epsilon_{end} + (\epsilon_{start} - \epsilon_{end})" title="\Large \epsilon = \epsilon_{end} + (\epsilon_{start} - \epsilon_{end})" />
+
+where <img src="https://latex.codecogs.com/gif.latex?\inline&space;\large&space;t" title="\large t" /> is the training step and <img src="https://latex.codecogs.com/gif.latex?\inline&space;\large&space;d" title="\large d" /> is the decay rate.
 
 ------------
 ## Reference:
