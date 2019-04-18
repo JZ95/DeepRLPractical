@@ -3,6 +3,8 @@
 *.rcg
 *.rcl
 *.hfo
+
+*.html
 notebooks/*
 
 # keep the empty logs dir

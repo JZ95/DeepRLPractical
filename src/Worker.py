@@ -39,9 +39,10 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     log = {'steps_to_ball': steps_to_ball,
            'steps_in_episode': steps_in_episode,
            'status_lst': status_lst}
+
     cnt = None
     firstRecord = True
-    loss = 0
+    optimizer.zero_grad()
 
     while True:
         # take action based on eps-greedy policy
@@ -61,7 +62,8 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             reward, next_state, discountFactor, done, targetNetwork, device)  # target -> tensor
         pred = computePrediction(state, action, valueNetwork, device)  # pred -> tensor
 
-        loss = loss + F.mse_loss(pred, target)  # compute loss
+        loss = F.mse_loss(pred, target)  # compute loss
+        loss.backward()  # accumulate loss
 
         lock.acquire()
         counter.value += 1
@@ -88,10 +90,8 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             state = torch.tensor(hfoEnv.reset()).to(device)
 
         if done or numTakenActions % args.i_async_update == 0:
-            optimizer.zero_grad()  # clear all cached grad
-            loss.backward()  # accumulate loss
             optimizer.step()  # apply grads
-            loss = 0
+            optimizer.zero_grad()  # clear all cached grad
 
         if counterValue % args.i_target == 0:
             targetNetwork.load_state_dict(

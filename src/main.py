@@ -16,21 +16,32 @@ from SharedAdam import SharedAdam
 def get_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', type=str, default='train')
-    parser.add_argument('--use-gpu', action='store_true')
-    parser.add_argument('--log-dir', type=str)
-    parser.add_argument('--reward-opt', type=str, default='baseline')
-    parser.add_argument('--ckpt-interval', type=int, default=1000000)
-
-    parser.add_argument('--t-max', type=float, default=32e6)
-    parser.add_argument('--n-jobs', type=int, default=8)
-    parser.add_argument('--i-async_update', type=int, default=500)
-    parser.add_argument('--i-target', type=int, default=7500)
-    parser.add_argument('--discountFactor', type=float, default=0.99)
-
-    parser.add_argument('--eps-end', type=float, default=0.02)
-    parser.add_argument('--eps-start', type=float, default=0.99)
-    parser.add_argument('--eps-decay', type=float, default=1e6)
+    parser.add_argument('--mode', type=str, default='train',
+                        help='run in train/eval mode')
+    parser.add_argument('--use-gpu', action='store_true',
+                        help='use gpu or not.')
+    parser.add_argument('--log-dir', type=str, default='logs',
+                        help='path for the experiment result.')
+    parser.add_argument('--reward-opt', type=str, default='baseline',
+                        help='reward option, see reward_fun.py')
+    parser.add_argument('--ckpt-interval', type=int, default=1000000,
+                        help='checkpoint saving intervals')
+    parser.add_argument('--t-max', type=float, default=32e6,
+                        help='training step upper-bound')
+    parser.add_argument('--n-jobs', type=int, default=8,
+                        help='number of threads')
+    parser.add_argument('--i-async_update', type=int, default=500,
+                        help='interval for updating value network.')
+    parser.add_argument('--i-target', type=int, default=7500,
+                        help='interval for updating target network.')
+    parser.add_argument('--discountFactor', type=float, default=0.99,
+                        help='discount factor, in the range of (0, 1].')
+    parser.add_argument('--eps-end', type=float, default=0.02,
+                        help='epsilon lower bound.')
+    parser.add_argument('--eps-start', type=float, default=0.99,
+                        help='epsilon upper bound.')
+    parser.add_argument('--eps-decay', type=float, default=1e6,
+                        help='epsilon decay rate.')
 
     args = parser.parse_args()
     return args
