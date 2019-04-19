@@ -1,4 +1,3 @@
-import math
 from hfo import *
 from functools import partial
 
@@ -19,21 +18,24 @@ def baseline(status, oldState, newState):
     return reward, info
 
 
-def baseline_penalty(status, oldState, newState):
-    """ Baseline reward function, only assign 1 on GOAL
+def getball(status, oldState, newState, r):
+    """ baseline (1 for GOAL) + r for get the ball
     """
     info = {}
     reward = 0
 
+    kickable_old = oldState[0][12]
     kickable = newState[0][12]
+
     if 'kickable' not in info and kickable == 1:
         info['kickable'] = True
 
     if status == GOAL:
-        reward = 1
+        reward += 1
 
-    elif status in (OUT_OF_BOUNDS, OUT_OF_TIME):
-        reward = -1
+    elif status == IN_GAME:
+        if kickable == 1 and kickable_old == -1:
+            reward += r
 
     return reward, info
 
@@ -66,8 +68,8 @@ def closer2ball(status, oldState, newState, r):
 
 def closer2ball_n_closer2goal(status, oldState, newState, r_ball, r_goal, goal_dist_lim):
     """ baseline (1 for GOAL)
-    + r_ball for closer to ball -- 1 - step
-    + r_goal for closer to goal && dist_to_goal < 0.75 -- 4 - step
+    + r_ball for closer to ball on every time step
+    + r_goal for closer to goal && dist_to_goal < goal_dist_lim on every time step
     """
     info = {}
     reward = 0
@@ -100,7 +102,7 @@ def closer2ball_n_closer2goal(status, oldState, newState, r_ball, r_goal, goal_d
 
 
 REWARD_OPTS = {'baseline': baseline,
-               'baseline-penalty': baseline_penalty,
+               'getball-0.5': partial(getball, r=0.5),
                'closer2ball-0.1': partial(closer2ball, r=0.1),
                'closer2ball-0.1-closer2goal-0.1-goal-dist-lim-0.75': partial(closer2ball_n_closer2goal, r_ball=0.1, r_goal=0.1, goal_dist_lim=0.75),
                }

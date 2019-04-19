@@ -14,3 +14,4 @@ logs/*
 
 *.json
 scripts/setup_docker.sh
+scripts/local_test.sh

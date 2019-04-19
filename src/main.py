@@ -5,12 +5,8 @@ import torch
 import argparse
 import os
 from Networks import ValueNetwork
-from Worker import train, evaluation
+from Worker import runTrain, runEval
 from SharedAdam import SharedAdam
-# Use this script to handle arguments and
-# initialize important components of your experiment.
-# These might include important parameters for your experiment,
-# your models, torch's multiprocessing methods, etc.
 
 
 def get_args():
@@ -80,7 +76,7 @@ if __name__ == "__main__":
         processes = []
         for idx in range(0, num_processes):
             trainingArgs = (idx, args, valueNetwork, targetNetwork, optimizer, lock, counter)
-            p = mp.Process(target=train, args=(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter))
+            p = mp.Process(target=runTrain, args=(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter))
             p.start()
             processes.append(p)
         for p in processes:
@@ -100,4 +96,7 @@ if __name__ == "__main__":
 
         valueNetwork.load_state_dict(torch.load(os.path.join(ckpt_path, lastest_ckpt), map_location=map_loc))
         valueNetwork.eval()
-        evaluation(args, valueNetwork)
+        runEval(args, valueNetwork)
+
+    else:
+        raise ValueError('unknown mode %s, mode shall be train/eval' % args.mode)

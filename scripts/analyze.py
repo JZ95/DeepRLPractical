@@ -29,7 +29,7 @@ def describe(data, name):
         tmp_steps_to_ball.append(data[i]['steps_to_ball'][-100:])
         tmp_n_steps_episode.append(data[i]['steps_in_episode'][-100:])
 
-    print('=========== INFO : %s ===========' % name)
+    print('INFO : %s ' % name)
     print('%d threads in %s.' % (len(data), name))
 
     for title, FLAG in zip(['GOAL', 'CAPTURED_BY_DEFENSE','OUT_OF_BOUNDS', 'OUT_OF_TIME'],
@@ -54,11 +54,12 @@ def main():
     args = parser.parse_args()
 
     eval_data, train_data = read_data(args.log_dir)
-    print('STATS FOR EVAL:')
+    print('\n')
+    print('=' * 10 + 'RESULTS FOR EVAL:' + '=' * 10)
     describe(eval_data, os.path.split(args.log_dir)[-1])
 
     print('\n')
-    print('STATS FOR TRAIN:')
+    print('=' * 10 + 'RESULTS FOR TRAIN:' + '=' * 10)
     describe(train_data, os.path.split(args.log_dir)[-1])
 
 

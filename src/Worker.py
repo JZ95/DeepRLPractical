@@ -1,18 +1,13 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
-
-from Networks import ValueNetwork
-from torch.autograd import Variable
-from Environment import HFOEnv
 import random
 import math
 import os
 import pickle
+from Environment import HFOEnv
 
 
-def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
+def runTrain(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     if args.use_gpu and torch.cuda.is_available():
         device = torch.device("cuda")
     else:
@@ -21,16 +16,15 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
     port = 6006 + idx * 9
     seed = 2019 + idx * 46
 
-    discountFactor = args.discountFactor
     hfoEnv = HFOEnv(args.reward_opt, numTeammates=0, numOpponents=1, port=port, seed=seed)
     hfoEnv.connectToServer()
 
     episodeNumber = 0
     numTakenActions = 0
     numTakenActionCKPT = 0
+    discountFactor = args.discountFactor
 
     totalWorkLoad = args.t_max // args.n_jobs
-    state = torch.tensor(hfoEnv.reset()).to(device)  # get initial state
 
     steps_to_ball = []
     steps_in_episode = []
@@ -42,7 +36,9 @@ def train(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
 
     cnt = None
     firstRecord = True
+
     optimizer.zero_grad()
+    state = torch.tensor(hfoEnv.reset()).to(device)  # get initial state
 
     while True:
         # take action based on eps-greedy policy
@@ -176,7 +172,7 @@ def saveLog(log_data, filename):
         pickle.dump(log_data, f)
 
 
-def evaluation(args, valueNetwork):
+def runEval(args, valueNetwork):
     port = 6050
     seed = 2019
 

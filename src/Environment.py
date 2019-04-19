@@ -8,7 +8,7 @@ from reward_fun import REWARD_OPTS
 
 HFO_PATH = os.environ['HFO_PATH']
 if HFO_PATH is None:
-    raise FileNotFoundError('please set environment variable HFO_PATH.')
+    raise KeyError('please set environment variable HFO_PATH.')
 
 
 class HFOEnv(object):

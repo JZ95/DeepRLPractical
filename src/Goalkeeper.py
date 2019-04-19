@@ -13,7 +13,7 @@ from copy import copy, deepcopy
 
 HFO_PATH = os.environ['HFO_PATH']
 if HFO_PATH is None:
-    raise FileNotFoundError('please set environment variable HFO_PATH.')
+    raise KeyError('please set environment variable HFO_PATH.')
 
 
 class HFOGoalkeepingPlayer(object):
