@@ -26,15 +26,15 @@ def runTrain(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
 
     totalWorkLoad = args.t_max // args.n_jobs
 
-    steps_to_ball = []
-    steps_in_episode = []
+    steps_to_ball = []  # number of steps spent to approach the ball in each episode
+    steps_in_episode = []  # number of steps in each episode
     status_lst = []
 
     log = {'steps_to_ball': steps_to_ball,
            'steps_in_episode': steps_in_episode,
            'status_lst': status_lst}
 
-    cnt = None
+    step_to_ball = None
     firstRecord = True
 
     optimizer.zero_grad()
@@ -48,8 +48,8 @@ def runTrain(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
         act = hfoEnv.possibleActions[action]
         newObservation, reward, done, status, info = hfoEnv.step(act)
 
-        if 'kickable' in info and firstRecord:
-            cnt = numTakenActions - numTakenActionCKPT
+        if info['kickable'] and firstRecord:
+            step_to_ball = numTakenActions - numTakenActionCKPT
             firstRecord = False
 
         next_state = torch.tensor(hfoEnv.preprocessState(newObservation)).to(device)
@@ -73,11 +73,11 @@ def runTrain(idx, args, valueNetwork, targetNetwork, optimizer, lock, counter):
             status_lst.append(status)
             steps_in_episode.append(numTakenActions - numTakenActionCKPT)
 
-            if cnt is None:
+            if step_to_ball is None:
                 steps_to_ball.append(numTakenActions - numTakenActionCKPT)
             else:
-                steps_to_ball.append(cnt)
-                cnt = None
+                steps_to_ball.append(step_to_ball)
+                step_to_ball = None
 
             episodeNumber += 1
             numTakenActionCKPT = numTakenActions
@@ -122,12 +122,12 @@ def select_action(state, valueNetwork, episodeNumber, numTakenActions, args):
         eps_threshold = args.eps_end + (args.eps_start - args.eps_end) * \
             math.exp(-1. * numTakenActions / args.eps_decay)
     else:
-        eps_threshold = args.eps_end
+        # choose action greedily in eval mode
+        eps_threshold = 0
 
     if sample < eps_threshold:
         return random.randrange(4)
     else:
-        action_values = valueNetwork(state)
         return torch.max(valueNetwork(state), 1)[-1].item()
 
 
@@ -197,7 +197,7 @@ def runEval(args, valueNetwork):
     log = {'steps_to_ball': steps_to_ball,
            'steps_in_episode': steps_in_episode,
            'status_lst': status_lst}
-    cnt = None
+    step_to_ball = None
     firstRecord = True
 
     while numTakenActions < args.t_max:
@@ -208,11 +208,9 @@ def runEval(args, valueNetwork):
         act = hfoEnv.possibleActions[action]
         newObservation, reward, done, status, info = hfoEnv.step(act)
 
-        if 'kickable' in info and firstRecord:
-            cnt = numTakenActions - numTakenActionCKPT
+        if info['kickable'] and firstRecord:
+            step_to_ball = numTakenActions - numTakenActionCKPT
             firstRecord = False
-
-        next_state = torch.tensor(hfoEnv.preprocessState(newObservation)).to(device)
 
         # all updates on the parameters shall acqure lock
         numTakenActions += 1
@@ -222,11 +220,11 @@ def runEval(args, valueNetwork):
             status_lst.append(status)
             steps_in_episode.append(numTakenActions - numTakenActionCKPT)
 
-            if cnt is None:
+            if step_to_ball is None:
                 steps_to_ball.append(numTakenActions - numTakenActionCKPT)
             else:
-                steps_to_ball.append(cnt)
-                cnt = None
+                steps_to_ball.append(step_to_ball)
+                step_to_ball = None
 
             episodeNumber += 1
             numTakenActionCKPT = numTakenActions
